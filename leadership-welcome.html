@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leadership Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    background-color: #f0f4f8;
+}
+a { text-decoration: none; color: inherit; }
+
+header {
+    background-color: #1E40AF;
+    color: white;
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+header h1 { margin:0; font-size:1.8em; }
+.profile-container { display:flex; align-items:center; gap:15px; }
+.profile-name { font-weight:bold; }
+.logout-btn {
+    padding:8px 16px;
+    background-color:#EF4444;
+    border:none; border-radius:6px;
+    color:white; font-weight:bold;
+    cursor:pointer; transition: background 0.2s;
+}
+.logout-btn:hover { background-color:#DC2626; }
+
+.container { max-width:1200px; margin:40px auto; padding:0 20px; }
+
+.welcome-msg { font-size:1.5em; margin-bottom:30px; color:#1E40AF; }
+
+.associate-table {
+    width:100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+.associate-table th, .associate-table td {
+    border:1px solid #ccc;
+    padding:10px;
+    text-align:center;
+}
+.associate-table th { background-color:#1E40AF; color:white; }
+
+.chart-container { width:100%; max-width:500px; margin-bottom:40px; }
+
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Company Portal - Leadership</h1>
+    <div class="profile-container">
+        <div class="profile-name" id="profileName">Leader</div>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+</header>
+
+<div class="container">
+    <p class="welcome-msg" id="welcomeMsg">Welcome, Leader!</p>
+
+    <h2>Associates Quality Reports</h2>
+    <table class="associate-table" id="associateTable">
+        <thead>
+            <tr>
+                <th>Associate</th>
+                <th>Total Errors</th>
+                <th>Most Frequent Error</th>
+                <th>PIP Start</th>
+                <th>PIP End</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dynamic data -->
+        </tbody>
+    </table>
+
+    <h2>Errors Progress Charts</h2>
+    <div id="chartsContainer">
+        <!-- Charts will be inserted here -->
+    </div>
+</div>
+
+<script>
+const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+if(!loggedInUser || loggedInUser.role !== 'leadership'){
+    window.location.href = "auth.html";
+} else {
+    document.getElementById('welcomeMsg').textContent = `Welcome, ${loggedInUser.username}!`;
+    document.getElementById('profileName').textContent = loggedInUser.username;
+}
+
+// Logout
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('loggedInUser');
+    window.location.href = "auth.html";
+});
+
+// Fetch reports from localStorage
+const reports = JSON.parse(localStorage.getItem('qualityReports')) || [];
+
+// Sort by total errors descending
+reports.sort((a,b)=>{
+    const totalA = Object.values(a.errors).reduce((sum,val)=>sum+val,0);
+    const totalB = Object.values(b.errors).reduce((sum,val)=>sum+val,0);
+    return totalB - totalA;
+});
+
+// Populate table
+const tbody = document.querySelector('#associateTable tbody');
+reports.forEach(r => {
+    const totalErrors = Object.values(r.errors).reduce((sum,val)=>sum+val,0);
+    const mostError = Object.entries(r.errors).sort((a,b)=>b[1]-a[1])[0] || ["N/A",0];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td>${r.username}</td>
+        <td>${totalErrors}</td>
+        <td>${mostError[0]} (${mostError[1]})</td>
+        <td>${r.pipStart || "N/A"}</td>
+        <td>${r.pipEnd || "N/A"}</td>
+    `;
+    tbody.appendChild(tr);
+});
+
+// Generate charts
+const chartsContainer = document.getElementById('chartsContainer');
+reports.forEach(r=>{
+    const chartDiv = document.createElement('div');
+    chartDiv.className = 'chart-container';
+    chartDiv.innerHTML = `<h3>${r.username}'s Errors</h3><canvas id="chart-${r.username}"></canvas>`;
+    chartsContainer.appendChild(chartDiv);
+
+    const ctx = document.getElementById(`chart-${r.username}`).getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(r.errors),
+            datasets: [{
+                label: 'Error Count',
+                data: Object.values(r.errors),
+                backgroundColor: '#1E40AF'
+            }]
+        },
+        options: {
+            responsive:true,
+            scales: {
+                y:{ beginAtZero:true }
+            }
+        }
+    });
+});
+</script>
+</body>
+</html>
