@@ -24,7 +24,7 @@
         text-align: center;
         margin-bottom: 20px;
     }
-    .auth-container input {
+    .auth-container input, .auth-container select {
         width: 100%;
         padding: 10px;
         margin: 10px 0;
@@ -69,6 +69,11 @@
     <form id="authForm">
         <input type="text" id="username" placeholder="Username" required>
         <input type="password" id="password" placeholder="Password" required>
+        <select id="role" required>
+            <option value="">Select Role</option>
+            <option value="associate">Associate</option>
+            <option value="leadership">Leadership</option>
+        </select>
         <button type="submit" id="submitBtn">Login</button>
         <p class="error" id="errorMsg"></p>
         <p class="success" id="successMsg"></p>
@@ -80,70 +85,79 @@
 </div>
 
 <script>
-    const authForm = document.getElementById('authForm');
-    const switchForm = document.getElementById('switchForm');
-    const formTitle = document.getElementById('formTitle');
-    const submitBtn = document.getElementById('submitBtn');
-    const errorMsg = document.getElementById('errorMsg');
-    const successMsg = document.getElementById('successMsg');
-    const forgotPwd = document.getElementById('forgotPwd');
-  
-    let isLogin = true;
+const authForm = document.getElementById('authForm');
+const switchForm = document.getElementById('switchForm');
+const formTitle = document.getElementById('formTitle');
+const submitBtn = document.getElementById('submitBtn');
+const errorMsg = document.getElementById('errorMsg');
+const successMsg = document.getElementById('successMsg');
+const forgotPwd = document.getElementById('forgotPwd');
 
-    switchForm.addEventListener('click', () => {
-        isLogin = !isLogin;
-        if(isLogin){
-            formTitle.textContent = 'Login';
-            submitBtn.textContent = 'Login';
-            switchForm.textContent = "Don't have an account? Sign Up";
-            errorMsg.textContent = '';
-            successMsg.textContent = '';
-        } else {
-            formTitle.textContent = 'Sign Up';
-            submitBtn.textContent = 'Sign Up';
-            switchForm.textContent = "Already have an account? Login";
-            errorMsg.textContent = '';
-            successMsg.textContent = '';
-        }
-    });
+let isLogin = true;
 
-    authForm.addEventListener('submit', function(e){
-        e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+// Toggle between login and signup
+switchForm.addEventListener('click', () => {
+    isLogin = !isLogin;
+    errorMsg.textContent = '';
+    successMsg.textContent = '';
 
-        let users = JSON.parse(localStorage.getItem('users')) || [];
+    if(isLogin){
+        formTitle.textContent = 'Login';
+        submitBtn.textContent = 'Login';
+        switchForm.textContent = "Don't have an account? Sign Up";
+    } else {
+        formTitle.textContent = 'Sign Up';
+        submitBtn.textContent = 'Sign Up';
+        switchForm.textContent = "Already have an account? Login";
+    }
+});
 
-        if(isLogin){
-            // LOGIN
-            const user = users.find(u => u.username === username && u.password === password);
-            if(user){
-                localStorage.setItem('loggedInUser', username);
-                window.location.href = "welcome.html";
-            } else {
-                errorMsg.textContent = "Invalid username or password!";
-                successMsg.textContent = '';
+authForm.addEventListener('submit', function(e){
+    e.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const role = document.getElementById('role').value;
+
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+
+    if(isLogin){
+        // LOGIN
+        const user = users.find(u => u.username === username && u.password === password && u.role === role);
+        if(user){
+            localStorage.setItem('loggedInUser', JSON.stringify(user));
+            // Redirect based on role
+            if(role === 'associate'){
+                window.location.href = "associate-dashboard.html";
+            } else if(role === 'leadership'){
+                window.location.href = "leadership-dashboard.html";
             }
         } else {
-            // SIGN UP
-            const userExists = users.find(u => u.username === username);
-            if(userExists){
-                errorMsg.textContent = "Username already exists!";
-                successMsg.textContent = '';
-            } else {
-                users.push({username, password});
-                localStorage.setItem('users', JSON.stringify(users));
-                successMsg.textContent = "Sign Up successful! You can now login.";
-                errorMsg.textContent = '';
-            }
+            errorMsg.textContent = "Invalid username, password, or role!";
+            successMsg.textContent = '';
         }
-    });
-  forgotPwd.addEventListener('click', () => {
+    } else {
+        // SIGN UP
+        const userExists = users.find(u => u.username === username);
+        if(userExists){
+            errorMsg.textContent = "Username already exists!";
+            successMsg.textContent = '';
+        } else {
+            users.push({username, password, role});
+            localStorage.setItem('users', JSON.stringify(users));
+            successMsg.textContent = "Sign Up successful! You can now login.";
+            errorMsg.textContent = '';
+        }
+    }
+});
+
+// Forgot Password
+forgotPwd.addEventListener('click', () => {
     const username = prompt("Enter your username to retrieve password:");
     let users = JSON.parse(localStorage.getItem('users')) || [];
     const user = users.find(u => u.username === username);
     if(user){
-        alert(`Your password is: ${user.password}`);
+        alert(`Your password is: ${user.password}\nRole: ${user.role}`);
     } else {
         alert("Username not found!");
     }
