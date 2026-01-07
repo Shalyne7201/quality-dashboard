@@ -28,18 +28,18 @@ const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
 
 // If no one is logged in, send to login page
 if(!loggedInUser){
-    window.location.href = "auth.html";
+    window.location.href = "my-portal/auth.html"; // <-- add repo folder if project site
 } else {
     // Redirect based on role
     if(loggedInUser.role === 'leadership'){
-        window.location.href = "leadership-welcome.html";
+        window.location.href = "my-portal/leadership-welcome.html";
     } else if(loggedInUser.role === 'associate'){
-        window.location.href = "associate-welcome.html";
+        window.location.href = "my-portal/associate-welcome.html";
     } else {
         // Unknown role fallback
         alert("Unknown role detected. Redirecting to login.");
         localStorage.removeItem('loggedInUser');
-        window.location.href = "auth.html";
+        window.location.href = "my-portal/auth.html";
     }
 }
 </script>
