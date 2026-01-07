@@ -4,57 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Associate Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="storage.js"></script>
 <style>
-body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    margin:0;
-    background-color: #f0f4f8;
-}
-header {
-    background-color: #1E40AF;
-    color: white;
-    padding: 15px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-header h1 { margin:0; font-size:1.8em; }
-.profile-container { display:flex; align-items:center; gap:15px; }
-.profile-name { font-weight:bold; }
-.logout-btn {
-    padding:8px 16px;
-    background-color:#EF4444;
-    border:none; border-radius:6px;
-    color:white; font-weight:bold;
-    cursor:pointer; transition: background 0.2s;
-}
-.logout-btn:hover { background-color:#DC2626; }
-
-.container { max-width:800px; margin:40px auto; padding:0 20px; }
-.welcome-msg { font-size:1.5em; margin-bottom:30px; color:#1E40AF; }
-
-.stats {
-    display:flex; gap:20px; flex-wrap: wrap;
-    margin-bottom:30px;
-}
-.stat-card {
-    background-color:white;
-    flex:1 1 200px;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 4px 15px rgba(0,0,0,0.1);
-    text-align:center;
-}
-.stat-card h3 { margin-bottom:10px; color:#1E40AF; }
-
-.chart-container { width:100%; max-width:600px; margin-bottom:40px; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:#f0f4f8;}
+header{background:#1E40AF;color:white;padding:15px 40px;display:flex;justify-content:space-between;align-items:center;}
+header h1{margin:0;font-size:1.8em;}
+.profile-container{display:flex;align-items:center;gap:15px;}
+.profile-name{font-weight:bold;}
+.logout-btn{padding:8px 16px;background:#EF4444;border:none;border-radius:6px;color:white;font-weight:bold;cursor:pointer;transition:0.2s;}
+.logout-btn:hover{background:#DC2626;}
+.container{max-width:900px;margin:40px auto;padding:0 20px;}
+h2{color:#1E40AF;margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+th,td{border:1px solid #ccc;padding:8px;text-align:center;}
+th{background:#1E40AF;color:white;}
+.pip{color:red;font-weight:bold;}
 </style>
 </head>
 <body>
 
 <header>
-    <h1>Company Portal - Associate</h1>
+    <h1>Associate Dashboard</h1>
     <div class="profile-container">
         <div class="profile-name" id="profileName">Associate</div>
         <button class="logout-btn" id="logoutBtn">Logout</button>
@@ -64,85 +34,54 @@ header h1 { margin:0; font-size:1.8em; }
 <div class="container">
     <p class="welcome-msg" id="welcomeMsg">Welcome, Associate!</p>
 
-    <div class="stats" id="statsContainer">
-        <!-- Total errors, most affected, PIP timeline -->
-    </div>
-
-    <div class="chart-container">
-        <h3>Your Errors Breakdown</h3>
-        <canvas id="errorChart"></canvas>
-    </div>
+    <h2>Your QC Reports</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Leader</th>
+                <th>Total Errors</th>
+                <th>PIP</th>
+                <th>Most Common Error(s)</th>
+                <th>Call Date</th>
+                <th>QC Date</th>
+                <th>PIP Start</th>
+                <th>PIP End</th>
+            </tr>
+        </thead>
+        <tbody id="reportTableBody"></tbody>
+    </table>
 </div>
 
 <script>
-// Get logged-in user
 const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-if(!loggedInUser || loggedInUser.role !== 'associate'){
-    window.location.href = "auth.html";
-} else {
-    document.getElementById('welcomeMsg').textContent = `Welcome, ${loggedInUser.username}!`;
-    document.getElementById('profileName').textContent = loggedInUser.username;
-}
+if(!loggedInUser || loggedInUser.role!=='associate'){ window.location.href='auth.html'; }
+document.getElementById('profileName').textContent = loggedInUser.username;
+document.getElementById('welcomeMsg').textContent = `Welcome, ${loggedInUser.username}!`;
 
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', () => {
+document.getElementById('logoutBtn').addEventListener('click',()=>{
     localStorage.removeItem('loggedInUser');
-    window.location.href = "auth.html";
+    window.location.href='auth.html';
 });
 
-// Fetch reports
-const reports = JSON.parse(localStorage.getItem('qualityReports')) || [];
-const myReport = reports.find(r => r.username === loggedInUser.username);
+// Render only this associate's reports
+const reports = Storage.getReportsByAssociate(loggedInUser.username);
+const tbody = document.getElementById('reportTableBody');
 
-const statsContainer = document.getElementById('statsContainer');
-
-if(myReport){
-    // Total errors
-    const totalErrors = Object.values(myReport.errors).reduce((sum,val)=>sum+val,0);
-    // Most affected errors
-    const sortedErrors = Object.entries(myReport.errors).sort((a,b)=>b[1]-a[1]);
-    const mostError = sortedErrors[0] || ["N/A",0];
-
-    // PIP timeline
-    const pipStart = myReport.pipStart || "N/A";
-    const pipEnd = myReport.pipEnd || "N/A";
-
-    statsContainer.innerHTML = `
-        <div class="stat-card">
-            <h3>Total Errors</h3>
-            <p>${totalErrors}</p>
-        </div>
-        <div class="stat-card">
-            <h3>Most Frequent Error</h3>
-            <p>${mostError[0]} (${mostError[1]})</p>
-        </div>
-        <div class="stat-card">
-            <h3>PIP Timeline</h3>
-            <p>Start: ${pipStart}<br>End: ${pipEnd}</p>
-        </div>
+reports.forEach(r=>{
+    const errors = Object.entries(r.errors).filter(([k,v])=>v.toLowerCase()==='no').map(([k])=>k).join(", ")||"None";
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td>${r.leader}</td>
+        <td>${r.totalErrors}</td>
+        <td class="pip">${r.pip}</td>
+        <td>${errors}</td>
+        <td>${r.callDate}</td>
+        <td>${r.qcDate}</td>
+        <td>${r.pipStart || "N/A"}</td>
+        <td>${r.pipEnd || "N/A"}</td>
     `;
-
-    // Error chart
-    const ctx = document.getElementById('errorChart').getContext('2d');
-    new Chart(ctx,{
-        type:'bar',
-        data:{
-            labels:Object.keys(myReport.errors),
-            datasets:[{
-                label:'Error Count',
-                data:Object.values(myReport.errors),
-                backgroundColor:'#1E40AF'
-            }]
-        },
-        options:{
-            responsive:true,
-            scales:{ y:{ beginAtZero:true } }
-        }
-    });
-
-} else {
-    statsContainer.innerHTML = `<p>No report data found for you yet.</p>`;
-}
+    tbody.appendChild(tr);
+});
 </script>
 
 </body>
