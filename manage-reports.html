@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage QC Reports</title>
+<script src="storage.js"></script>
+<style>
+/* (Same styling as before) */
+body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:#f0f4f8;}
+header{background:#1E40AF;color:white;padding:15px 40px;display:flex;justify-content:space-between;align-items:center;}
+header h1{margin:0;font-size:1.8em;}
+.profile-container{display:flex;align-items:center;gap:15px;}
+.profile-name{font-weight:bold;}
+.logout-btn{padding:8px 16px;background:#EF4444;border:none;border-radius:6px;color:white;font-weight:bold;cursor:pointer;transition:0.2s;}
+.logout-btn:hover{background:#DC2626;}
+.container{max-width:900px;margin:40px auto;padding:0 20px;}
+form{background:white;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);}
+form input, form select{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #ccc;}
+form button{width:100%;padding:12px;background-color:#1E40AF;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;margin-top:10px;}
+form button:hover{background-color:#2563EB;}
+.success{color:green;text-align:center;margin-top:10px;}
+.error{color:red;text-align:center;margin-top:10px;}
+table{width:100%;border-collapse:collapse;margin-top:30px;}
+th,td{border:1px solid #ccc;padding:8px;text-align:center;}
+th{background-color:#1E40AF;color:white;}
+.pip {color:red;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<header>
+<h1>Manage QC Reports</h1>
+<div class="profile-container">
+    <div class="profile-name" id="profileName">Leader</div>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+</div>
+</header>
+
+<div class="container">
+<h2>Add / Update Associate Report</h2>
+<form id="reportForm">
+    <label>Leader:</label><input type="text" id="leader" placeholder="Leader Name" required>
+    <label>Associate (CSR):</label><input type="text" id="username" placeholder="Associate Name" required>
+    <label>Reviewer (QC):</label><input type="text" id="reviewer" placeholder="Reviewer Name" required>
+    <label>Call Type:</label><input type="text" id="callType" placeholder="Call Type" required>
+    <label>Call Date:</label><input type="date" id="callDate" required>
+    <label>QC Date:</label><input type="date" id="qcDate" required>
+    <label>Interaction ID:</label><input type="text" id="interactionID" placeholder="Interaction ID" required>
+    <label>Client:</label><input type="text" id="client" placeholder="Client Name" required>
+    <label>Loan Number:</label><input type="text" id="loanNumber" placeholder="Loan Number" required>
+
+    <h3>Error Fields (Yes = No Error, No = Error)</h3>
+    <input type="text" id="greetings" placeholder="Greetings (Yes/No)" required>
+    <input type="text" id="verification" placeholder="Verification (Yes/No)" required>
+    <input type="text" id="policyUpdate" placeholder="Policy Update (Yes/No)" required>
+    <input type="text" id="loanNotations" placeholder="Loan/Account Notations (Yes/No)" required>
+    <input type="text" id="professionalism" placeholder="Professionalism (Yes/No)" required>
+    <input type="text" id="closing" placeholder="Closing (Yes/No)" required>
+    <input type="text" id="documentation" placeholder="Documentation (Yes/No)" required>
+    <input type="text" id="fcr" placeholder="First Call Resolution (Yes/No)" required>
+    <label>Coaching Comments:</label><input type="text" id="coachingComments" placeholder="Coaching Comments">
+
+    <button type="submit">Save Report</button>
+    <p class="success" id="successMsg"></p>
+    <p class="error" id="errorMsg"></p>
+</form>
+
+<h2>All Reports</h2>
+<table>
+<thead>
+<tr>
+<th>Leader</th>
+<th>Associate</th>
+<th>Total Errors</th>
+<th>PIP</th>
+<th>Call Date</th>
+<th>QC Date</th>
+<th>Interaction ID</th>
+</tr>
+</thead>
+<tbody id="reportTableBody"></tbody>
+</table>
+</div>
+
+<script>
+const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+if(!loggedInUser || loggedInUser.role !== 'leadership'){ window.location.href="auth.html"; }
+document.getElementById('profileName').textContent = loggedInUser.username;
+document.getElementById('logoutBtn').addEventListener('click',()=>{ localStorage.removeItem('loggedInUser'); window.location.href="auth.html"; });
+
+function calculateErrors(fields){ return Object.values(fields).filter(v=>v.toLowerCase()==='no').length; }
+function determinePIP(totalErrors){ return totalErrors>=8?"Yes":"No"; }
+
+const form = document.getElementById('reportForm');
+const successMsg = document.getElementById('successMsg');
+const errorMsg = document.getElementById('errorMsg');
+const tbody = document.getElementById('reportTableBody');
+
+function renderTable(){
+    tbody.innerHTML = "";
+    const reports = Storage.getReportsByLeader(loggedInUser.username);
+    reports.forEach(r=>{
+        const errors = Object.entries(r.errors).filter(([k,v])=>v.toLowerCase()==='no').map(([k])=>k).join(", ")||"None";
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${r.leader}</td>
+            <td>${r.username}</td>
+            <td>${r.totalErrors}</td>
+            <td class="pip">${r.pip}</td>
+            <td>${r.callDate}</td>
+            <td>${r.qcDate}</td>
+            <td>${r.interactionID}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Form submission
+form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const leader = document.getElementById('leader').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const reviewer = document.getElementById('reviewer').value.trim();
+    const callType = document.getElementById('callType').value.trim();
+    const callDate = document.getElementById('callDate').value;
+    const qcDate = document.getElementById('qcDate').value;
+    const interactionID = document.getElementById('interactionID').value.trim();
+    const client = document.getElementById('client').value.trim();
+    const loanNumber = document.getElementById('loanNumber').value.trim();
+    const coachingComments = document.getElementById('coachingComments').value.trim();
+
+    const errorFields = {
+        greetings: document.getElementById('greetings').value.trim(),
+        verification: document.getElementById('verification').value.trim(),
+        policyUpdate: document.getElementById('policyUpdate').value.trim(),
+        loanNotations: document.getElementById('loanNotations').value.trim(),
+        professionalism: document.getElementById('professionalism').value.trim(),
+        closing: document.getElementById('closing').value.trim(),
+        documentation: document.getElementById('documentation').value.trim(),
+        fcr: document.getElementById('fcr').value.trim()
+    };
+
+    const totalErrors = calculateErrors(errorFields);
+    const pip = determinePIP(totalErrors);
+    const pipStart = pip==="Yes"?new Date().toISOString().split('T')[0]:null;
+
+    Storage.addOrUpdateReport({leader, username, reviewer, callType, callDate, qcDate, interactionID, client, loanNumber, errors:errorFields, totalErrors, pip, pipStart, pipEnd:null, coachingComments});
+    successMsg.textContent = `Report saved for ${username}`;
+    errorMsg.textContent="";
+    form.reset();
+    renderTable();
+});
+
+renderTable();
+</script>
+
+</body>
+</html>
