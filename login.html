@@ -49,6 +49,8 @@
             text-align: center;
             font-size: 0.9em;
         }
+    </style>
+    <style>
     <label for="role">Role:</label>
     <select id="role" name="role">
     <option value="associate">Associate</option>
@@ -86,5 +88,27 @@
             }
         });
     </script>
+    <script>
+       function login() {
+       const username = document.getElementById('username').value;
+       const role = document.getElementById('role').value;
+
+       // Example: hardcoded users (for testing)
+       const users = {
+       'john': 'associate',
+       'jane': 'leadership'
+    };
+
+       if (users[username] && users[username] === role) {
+    if (role === 'associate') {
+      window.location.href = 'associate-dashboard.html';
+    } else if (role === 'leadership') {
+      window.location.href = 'leadership-dashboard.html';
+    }
+  } else {
+    alert('Invalid username or role!');
+  }
+}
+</script>
 </body>
 </html>
