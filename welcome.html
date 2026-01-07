@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome - Company Portal</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .welcome-container {
+        background-color: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        text-align: center;
+    }
+    .welcome-container h1 {
+        margin-bottom: 20px;
+        color: #1E40AF;
+    }
+    .welcome-container button {
+        padding: 12px 20px;
+        background-color: #EF4444;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .welcome-container button:hover {
+        background-color: #DC2626;
+    }
+</style>
+</head>
+<body>
+<div class="welcome-container">
+    <h1 id="welcomeMsg">Welcome!</h1>
+    <p>You have successfully logged in to the Company Portal.</p>
+    <button id="logoutBtn">Logout</button>
+</div>
+
+<script>
+    const welcomeMsg = document.getElementById('welcomeMsg');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const username = localStorage.getItem('loggedInUser');
+    if(username){
+        welcomeMsg.textContent = `Welcome, ${username}!`;
+    } else {
+        // if not logged in, redirect to auth page
+        window.location.href = "auth.html";
+    }
+
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('loggedInUser');
+        window.location.href = "auth.html";
+    });
+</script>
+</body>
+</html>
