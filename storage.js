@@ -16,25 +16,23 @@ const Storage = (function(){
     // Add or update a report
     function addOrUpdateReport(report){
         let reports = getReports();
-        // Check if report exists (by associate + call date)
-        const existing = reports.find(r=>r.username===report.username && r.callDate===report.callDate);
+        const existing = reports.find(r => r.username === report.username && r.callDate === report.callDate);
         if(existing){
-            // Update all fields
-            Object.assign(existing, report);
+            Object.assign(existing, report); // Update
         } else {
-            reports.push(report);
+            reports.push(report); // Add new
         }
         saveReports(reports);
     }
 
     // Get reports by leader
     function getReportsByLeader(leader){
-        return getReports().filter(r=>r.leader === leader);
+        return getReports().filter(r => r.leader === leader);
     }
 
     // Get reports by associate
     function getReportsByAssociate(username){
-        return getReports().filter(r=>r.username === username);
+        return getReports().filter(r => r.username === username);
     }
 
     return {
