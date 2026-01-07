@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login / Sign Up - Company Portal</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .auth-container {
+        background-color: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        width: 300px;
+    }
+    .auth-container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .auth-container input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+    .auth-container button {
+        width: 100%;
+        padding: 12px;
+        background-color: #1E40AF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+    .auth-container button:hover {
+        background-color: #2563EB;
+    }
+    .switch {
+        text-align: center;
+        margin-top: 15px;
+        cursor: pointer;
+        color: #1E40AF;
+    }
+    .error {
+        color: red;
+        text-align: center;
+        font-size: 0.9em;
+    }
+    .success {
+        color: green;
+        text-align: center;
+        font-size: 0.9em;
+    }
+</style>
+</head>
+<body>
+<div class="auth-container">
+    <h2 id="formTitle">Login</h2>
+    <form id="authForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit" id="submitBtn">Login</button>
+        <p class="error" id="errorMsg"></p>
+        <p class="success" id="successMsg"></p>
+    </form>
+    <p class="switch" id="switchForm">Don't have an account? Sign Up</p>
+    <p style="text-align:right; font-size:0.9em; margin-top:-5px;">
+    <a href="#" id="forgotPwd">Forgot Password?</a>
+    </p>
+</div>
+
+<script>
+    const authForm = document.getElementById('authForm');
+    const switchForm = document.getElementById('switchForm');
+    const formTitle = document.getElementById('formTitle');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const forgotPwd = document.getElementById('forgotPwd');
+  
+    let isLogin = true;
+
+    switchForm.addEventListener('click', () => {
+        isLogin = !isLogin;
+        if(isLogin){
+            formTitle.textContent = 'Login';
+            submitBtn.textContent = 'Login';
+            switchForm.textContent = "Don't have an account? Sign Up";
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
+        } else {
+            formTitle.textContent = 'Sign Up';
+            submitBtn.textContent = 'Sign Up';
+            switchForm.textContent = "Already have an account? Login";
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
+        }
+    });
+
+    authForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+
+        if(isLogin){
+            // LOGIN
+            const user = users.find(u => u.username === username && u.password === password);
+            if(user){
+                localStorage.setItem('loggedInUser', username);
+                window.location.href = "index.html"; // redirect to main site
+            } else {
+                errorMsg.textContent = "Invalid username or password!";
+                successMsg.textContent = '';
+            }
+        } else {
+            // SIGN UP
+            const userExists = users.find(u => u.username === username);
+            if(userExists){
+                errorMsg.textContent = "Username already exists!";
+                successMsg.textContent = '';
+            } else {
+                users.push({username, password});
+                localStorage.setItem('users', JSON.stringify(users));
+                successMsg.textContent = "Sign Up successful! You can now login.";
+                errorMsg.textContent = '';
+            }
+        }
+    });
+  forgotPwd.addEventListener('click', () => {
+    const username = prompt("Enter your username to retrieve password:");
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+    const user = users.find(u => u.username === username);
+    if(user){
+        alert(`Your password is: ${user.password}`);
+    } else {
+        alert("Username not found!");
+    }
+});
+</script>
+</body>
+</html>
